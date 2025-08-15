@@ -2,3 +2,5 @@
 -- Count total number of employees in the database
 -- Expected: Single number representing total employee count
 
+SELECT COUNT(*)
+FROM employee;

@@ -2,3 +2,5 @@
 -- Find all unique department numbers from dept_emp table
 -- Expected: List of unique department numbers
 
+SELECT DISTINCT dept_no
+FROM dept_emp;

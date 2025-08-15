@@ -2,3 +2,5 @@
 -- Find employees hired after '1990-01-01'
 -- Expected: Employees hired after 1990
 
+select * from employee
+having hire_date > '1990-01-01'

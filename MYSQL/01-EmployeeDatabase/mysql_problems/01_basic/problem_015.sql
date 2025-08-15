@@ -2,3 +2,5 @@
 -- Find all titles where to_date is NULL
 -- Expected: Current/active titles
 
+SELECT * FROM title
+where to_date is NULL

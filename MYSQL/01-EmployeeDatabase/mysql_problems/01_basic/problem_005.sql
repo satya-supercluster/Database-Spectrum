@@ -2,3 +2,6 @@
 -- Select first 10 employees from the employee table
 -- Expected: First 10 employee records
 
+SELECT *
+FROM employee
+LIMIT 10;

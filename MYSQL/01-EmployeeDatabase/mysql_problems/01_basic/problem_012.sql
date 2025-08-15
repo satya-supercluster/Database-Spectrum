@@ -2,3 +2,5 @@
 -- List all employees ordered by birth_date in descending order
 -- Expected: Employees sorted by birth date (youngest first)
 
+select * from employee
+ORDER BY birth_date desc
