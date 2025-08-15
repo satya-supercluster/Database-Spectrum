@@ -1,0 +1,12 @@
+{
+  "total_problems": 100,
+  "levels": {
+    "basic": 20,
+    "intermediate": 20,
+    "hard": 10,
+    "advanced": 10,
+    "complex": 40
+  },
+  "created_date": "2024",
+  "database": "Northwind"
+}
