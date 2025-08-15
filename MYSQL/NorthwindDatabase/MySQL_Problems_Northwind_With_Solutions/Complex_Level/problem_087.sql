@@ -1,0 +1,12 @@
+-- Problem 87: Customer Value Migration Analysis
+-- Level: Complex
+-- ============================================================
+
+-- PROBLEM STATEMENT:
+-- Write a query to analyze how customer value changes over time and identify migration patterns.
+
+-- ============================================================
+-- SOLUTION:
+-- ============================================================
+
+WITH CustomerValueHistory AS (SELECT c.custId, c.companyName, YEAR(s.orderDate) AS year, SUM(od.quantity * od.unitPrice * (1 - od.discount)) AS annual_value, COUNT(s.orderId) AS annual_orders FROM Customer c JOIN SalesOrder s ON c.custId = s.custId JOIN OrderDetail od ON s.orderId = od.orderId GROUP BY c.custId, c.companyName, YEAR(s.orderDate)), ValueSegmentation AS (SELECT custId, companyName, year, annual_value, annual_orders, CASE WHEN annual_value >= 5000 THEN 'High Value' WHEN annual_value >= 2000 THEN 'Medium Value' WHEN annual_value >= 500 THEN 'Low Value' ELSE 'Minimal Value' END AS value_segment FROM CustomerValueHistory), ValueMigration AS (SELECT cvh1.custId, cvh1.companyName, cvh1.year AS year1, cvh2.year AS year2, vs1.value_segment AS segment1, vs2.value_segment AS segment2, cvh1.annual_value AS value1, cvh2.annual_value AS value2 FROM CustomerValueHistory cvh1 JOIN CustomerValueHistory cvh2 ON cvh1.custId = cvh2.custId AND cvh2.year = cvh1.year + 1 JOIN ValueSegmentation vs1 ON cvh1.custId = vs1.custId AND cvh1.year = vs1.year JOIN ValueSegmentation vs2 ON cvh2.custId = vs2.custId AND cvh2.year = vs2.year), MigrationPatterns AS (SELECT segment1, segment2, COUNT(*) AS migration_count, AVG(value2 - value1) AS avg_value_change, AVG((value2 - value1) / NULLIF(value1, 0) * 100) AS avg_percent_change FROM ValueMigration GROUP BY segment1, segment2), MigrationMatrix AS (SELECT segment1, segment2, migration_count, avg_value_change, avg_percent_change, CASE WHEN segment1 = segment2 THEN 'Retained' WHEN (segment1 = 'Low Value' AND segment2 IN ('Medium Value', 'High Value')) OR (segment1 = 'Medium Value' AND segment2 = 'High Value') THEN 'Upgraded' WHEN (segment1 = 'High Value' AND segment2 IN ('Medium Value', 'Low Value')) OR (segment1 = 'Medium Value' AND segment2 = 'Low Value') THEN 'Downgraded' ELSE 'Other' END AS migration_type FROM MigrationPatterns) SELECT migration_type, segment1, segment2, migration_count, ROUND(avg_value_change, 2) AS avg_value_change, ROUND(avg_percent_change, 2) AS avg_percent_change FROM MigrationMatrix ORDER BY migration_type, migration_count DESC;

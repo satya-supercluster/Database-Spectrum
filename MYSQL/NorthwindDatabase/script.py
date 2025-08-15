@@ -639,7 +639,7 @@ for problem in final_problems:
 
 def create_folder_structure():
     """Create folder structure and SQL files"""
-    base_dir = "MySQL_Problems_Northwind"
+    base_dir = "MySQL_Problems_Northwind_With_Solutions"
     
     # Create main directory
     if not os.path.exists(base_dir):
@@ -666,7 +666,7 @@ def create_folder_structure():
                 f.write("-- " + "="*60 + "\n")
                 f.write("-- SOLUTION:\n")
                 f.write("-- " + "="*60 + "\n\n")
-                # f.write(f"{problem['solution']}\n")
+                f.write(f"{problem['solution']}\n")
     
     # Create README file
     readme_path = os.path.join(base_dir, "README.md")

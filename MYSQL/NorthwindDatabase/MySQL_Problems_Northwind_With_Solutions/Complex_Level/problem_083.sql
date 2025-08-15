@@ -1,0 +1,12 @@
+-- Problem 83: Customer Segmentation with Behavioral Clustering
+-- Level: Complex
+-- ============================================================
+
+-- PROBLEM STATEMENT:
+-- Write a query to perform advanced customer segmentation using multiple behavioral dimensions.
+
+-- ============================================================
+-- SOLUTION:
+-- ============================================================
+
+WITH CustomerBehavior AS (SELECT c.custId, c.companyName, COUNT(DISTINCT s.orderId) AS order_frequency, SUM(od.quantity * od.unitPrice * (1 - od.discount)) AS total_spent, AVG(od.quantity * od.unitPrice * (1 - od.discount)) AS avg_order_value, COUNT(DISTINCT p.categoryId) AS category_diversity, DATEDIFF(MAX(s.orderDate), MIN(s.orderDate)) AS customer_lifespan, MAX(s.orderDate) AS last_order_date FROM Customer c LEFT JOIN SalesOrder s ON c.custId = s.custId LEFT JOIN OrderDetail od ON s.orderId = od.orderId LEFT JOIN Product p ON od.productId = p.productId GROUP BY c.custId, c.companyName), BehavioralScores AS (SELECT custId, companyName, CASE WHEN order_frequency >= 10 THEN 5 WHEN order_frequency >= 5 THEN 4 WHEN order_frequency >= 3 THEN 3 WHEN order_frequency >= 1 THEN 2 ELSE 1 END AS frequency_score, CASE WHEN total_spent >= 5000 THEN 5 WHEN total_spent >= 2000 THEN 4 WHEN total_spent >= 1000 THEN 3 WHEN total_spent >= 500 THEN 2 ELSE 1 END AS monetary_score, CASE WHEN DATEDIFF(CURDATE(), last_order_date) <= 30 THEN 5 WHEN DATEDIFF(CURDATE(), last_order_date) <= 90 THEN 4 WHEN DATEDIFF(CURDATE(), last_order_date) <= 180 THEN 3 WHEN DATEDIFF(CURDATE(), last_order_date) <= 365 THEN 2 ELSE 1 END AS recency_score FROM CustomerBehavior WHERE last_order_date IS NOT NULL), CustomerClusters AS (SELECT custId, companyName, frequency_score, monetary_score, recency_score, (frequency_score + monetary_score + recency_score) AS total_score, CASE WHEN (frequency_score + monetary_score + recency_score) >= 13 THEN 'Champions' WHEN (frequency_score >= 3 AND monetary_score >= 3) THEN 'Loyal Customers' WHEN recency_score >= 4 THEN 'New Customers' WHEN (frequency_score <= 2 AND recency_score <= 2) THEN 'At Risk' ELSE 'Regular' END AS customer_segment FROM BehavioralScores) SELECT customer_segment, COUNT(*) AS customer_count, AVG(total_score) AS avg_score, AVG(frequency_score) AS avg_frequency, AVG(monetary_score) AS avg_monetary, AVG(recency_score) AS avg_recency FROM CustomerClusters GROUP BY customer_segment ORDER BY avg_score DESC;

@@ -1,0 +1,12 @@
+-- Problem 86: Advanced Sales Forecasting with Multiple Models
+-- Level: Complex
+-- ============================================================
+
+-- PROBLEM STATEMENT:
+-- Write a query to implement multiple forecasting models and compare their accuracy for sales prediction.
+
+-- ============================================================
+-- SOLUTION:
+-- ============================================================
+
+WITH HistoricalData AS (SELECT DATE_FORMAT(s.orderDate, '%Y-%m') AS month, SUM(od.quantity * od.unitPrice * (1 - od.discount)) AS monthly_sales, ROW_NUMBER() OVER (ORDER BY DATE_FORMAT(s.orderDate, '%Y-%m')) AS time_index FROM SalesOrder s JOIN OrderDetail od ON s.orderId = od.orderId WHERE s.orderDate >= DATE_SUB(CURDATE(), INTERVAL 24 MONTH) GROUP BY DATE_FORMAT(s.orderDate, '%Y-%m')), MovingAverage AS (SELECT month, monthly_sales, time_index, AVG(monthly_sales) OVER (ORDER BY time_index ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS ma3_forecast, AVG(monthly_sales) OVER (ORDER BY time_index ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) AS ma6_forecast FROM HistoricalData), LinearTrend AS (SELECT month, monthly_sales, time_index, (SELECT (COUNT(*) * SUM(time_index * monthly_sales) - SUM(time_index) * SUM(monthly_sales)) / (COUNT(*) * SUM(time_index * time_index) - SUM(time_index) * SUM(time_index))) * time_index + (SELECT (SUM(monthly_sales) - (COUNT(*) * SUM(time_index * monthly_sales) - SUM(time_index) * SUM(monthly_sales)) / (COUNT(*) * SUM(time_index * time_index) - SUM(time_index) * SUM(time_index)) * SUM(time_index)) / COUNT(*)) AS linear_forecast FROM HistoricalData), ForecastAccuracy AS (SELECT hd.month, hd.monthly_sales AS actual, ma.ma3_forecast, ma.ma6_forecast, lt.linear_forecast, ABS(hd.monthly_sales - ma.ma3_forecast) / NULLIF(hd.monthly_sales, 0) * 100 AS ma3_error, ABS(hd.monthly_sales - ma.ma6_forecast) / NULLIF(hd.monthly_sales, 0) * 100 AS ma6_error, ABS(hd.monthly_sales - lt.linear_forecast) / NULLIF(hd.monthly_sales, 0) * 100 AS linear_error FROM HistoricalData hd JOIN MovingAverage ma ON hd.month = ma.month JOIN LinearTrend lt ON hd.month = lt.month WHERE ma.ma6_forecast IS NOT NULL) SELECT 'Moving Average 3' AS model, AVG(ma3_error) AS avg_error, STDDEV(ma3_error) AS error_stddev FROM ForecastAccuracy UNION ALL SELECT 'Moving Average 6', AVG(ma6_error), STDDEV(ma6_error) FROM ForecastAccuracy UNION ALL SELECT 'Linear Trend', AVG(linear_error), STDDEV(linear_error) FROM ForecastAccuracy ORDER BY avg_error;

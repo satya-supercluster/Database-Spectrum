@@ -1,0 +1,12 @@
+-- Problem 88: Comprehensive Competitor Analysis Framework
+-- Level: Complex
+-- ============================================================
+
+-- PROBLEM STATEMENT:
+-- Write a query to analyze competitive positioning using price comparisons, market share, and customer overlap.
+
+-- ============================================================
+-- SOLUTION:
+-- ============================================================
+
+WITH ProductCompetitiveAnalysis AS (SELECT p.productId, p.productName, c.categoryName, p.unitPrice, AVG(p2.unitPrice) AS category_avg_price, COUNT(p2.productId) AS category_product_count, RANK() OVER (PARTITION BY p.categoryId ORDER BY p.unitPrice) AS price_rank_in_category FROM Product p JOIN Category c ON p.categoryId = c.categoryId JOIN Product p2 ON c.categoryId = p2.categoryId GROUP BY p.productId, p.productName, c.categoryName, p.unitPrice), MarketShareAnalysis AS (SELECT p.productId, p.productName, SUM(od.quantity * od.unitPrice * (1 - od.discount)) AS product_revenue, SUM(SUM(od.quantity * od.unitPrice * (1 - od.discount))) OVER (PARTITION BY p.categoryId) AS category_total_revenue, SUM(od.quantity) AS units_sold FROM Product p LEFT JOIN OrderDetail od ON p.productId = od.productId GROUP BY p.productId, p.productName), CompetitivePositioning AS (SELECT pca.productId, pca.productName, pca.categoryName, pca.unitPrice, pca.category_avg_price, pca.price_rank_in_category, msa.product_revenue, msa.category_total_revenue, (msa.product_revenue / NULLIF(msa.category_total_revenue, 0) * 100) AS market_share_pct, CASE WHEN pca.unitPrice > pca.category_avg_price * 1.2 THEN 'Premium Pricing' WHEN pca.unitPrice < pca.category_avg_price * 0.8 THEN 'Value Pricing' ELSE 'Competitive Pricing' END AS pricing_strategy, CASE WHEN (msa.product_revenue / NULLIF(msa.category_total_revenue, 0) * 100) > 20 THEN 'Market Leader' WHEN (msa.product_revenue / NULLIF(msa.category_total_revenue, 0) * 100) > 10 THEN 'Strong Player' WHEN (msa.product_revenue / NULLIF(msa.category_total_revenue, 0) * 100) > 5 THEN 'Moderate Player' ELSE 'Niche Player' END AS market_position FROM ProductCompetitiveAnalysis pca LEFT JOIN MarketShareAnalysis msa ON pca.productId = msa.productId) SELECT categoryName, pricing_strategy, market_position, COUNT(*) AS product_count, AVG(market_share_pct) AS avg_market_share, AVG(unitPrice) AS avg_price FROM CompetitivePositioning GROUP BY categoryName, pricing_strategy, market_position ORDER BY categoryName, avg_market_share DESC;
